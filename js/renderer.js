@@ -174,6 +174,7 @@ function drawShape(ctx, shape, selected, canvas, isTemp = false) {
 
         case 'triangle':
         case 'rectangle':
+        case 'roundedrect':
         case 'circle':
         case 'polygon':
         case 'fan':

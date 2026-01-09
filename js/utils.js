@@ -48,6 +48,7 @@ export function getShapeIcon(type) {
         lineloop: '⬠',
         triangle: '△',
         rectangle: '▭',
+        roundedrect: '▢',
         circle: '○',
         polygon: '⬡',
         fan: '✦'

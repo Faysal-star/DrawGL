@@ -4,10 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="DrawGL - A visual OpenGL primitive editor for creating and exporting 2D shapes to C++ code. Draw points, lines, triangles, polygons, and more with an intuitive interface.">
+    <meta name="description"
+        content="DrawGL - A visual OpenGL primitive editor for creating and exporting 2D shapes to C++ code. Draw points, lines, triangles, polygons, and more with an intuitive interface.">
     <meta name="keywords" content="OpenGL, graphics editor, C++ export, 2D shapes, WebGL, drawing tool">
     <meta name="author" content="Faysal">
-    
+
     <!-- Open Graph -->
     <meta property="og:title" content="DrawGL - OpenGL Asset Forge">
     <meta property="og:description" content="Visual editor for creating OpenGL 2D primitives and exporting to C++ code">
@@ -15,11 +16,12 @@
     <meta property="og:url" content="https://faysal-star.github.io/DrawGL/">
     <meta property="og:image" content="https://faysal-star.github.io/DrawGL/img/drawgl_og.png">
     <meta property="og:site_name" content="DrawGL">
-    
+
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="DrawGL - OpenGL Asset Forge">
-    <meta name="twitter:description" content="Visual editor for creating OpenGL 2D primitives and exporting to C++ code">
+    <meta name="twitter:description"
+        content="Visual editor for creating OpenGL 2D primitives and exporting to C++ code">
     <meta name="twitter:image" content="https://faysal-star.github.io/DrawGL/img/drawgl_og.png">
 
     <title>DrawGL - OpenGL Asset Forge</title>
@@ -124,6 +126,11 @@
             <button class="tool-btn" data-tool="rectangle" data-tooltip="Rectangle (R)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="3" y="5" width="18" height="14" rx="1" />
+                </svg>
+            </button>
+            <button class="tool-btn" data-tool="roundedrect" data-tooltip="Rounded Rect (U)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="5" width="18" height="14" rx="5" />
                 </svg>
             </button>
             <button class="tool-btn" data-tool="circle" data-tooltip="Circle (C)">
@@ -262,6 +269,23 @@
                         <div class="slider-container">
                             <input type="range" id="polygonSides" min="3" max="12" value="6">
                             <span class="slider-value" id="polygonSidesValue">6</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel-section">
+                    <div class="panel-section-title">Rounded Rectangle</div>
+                    <div class="form-group">
+                        <label>Corner Radius</label>
+                        <div class="slider-container">
+                            <input type="range" id="roundedCornerRadius" min="5" max="50" value="20">
+                            <span class="slider-value" id="roundedCornerRadiusValue">20%</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Corner Segments</label>
+                        <div class="slider-container">
+                            <input type="range" id="roundedCornerSegments" min="2" max="16" value="8">
+                            <span class="slider-value" id="roundedCornerSegmentsValue">8</span>
                         </div>
                     </div>
                 </div>

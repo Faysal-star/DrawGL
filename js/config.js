@@ -5,7 +5,9 @@ export const DEFAULT_SETTINGS = {
     snapToVertex: false,
     circleSegments: 24,
     polygonSides: 6,
-    defaultColor: '#10b981'
+    defaultColor: '#10b981',
+    roundedCornerRadius: 0.2,  // Ratio of min(width, height) for corner radius
+    roundedCornerSegments: 8   // Segments per corner arc
 };
 
 export const TOOLS = {
@@ -17,6 +19,7 @@ export const TOOLS = {
     LINELOOP: 'lineloop',
     TRIANGLE: 'triangle',
     RECTANGLE: 'rectangle',
+    ROUNDEDRECT: 'roundedrect',
     CIRCLE: 'circle',
     POLYGON: 'polygon',
     FAN: 'fan',

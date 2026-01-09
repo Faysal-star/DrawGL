@@ -2,6 +2,7 @@ import { state } from './state.js';
 import { render } from './renderer.js';
 import { generateId, getShapeIcon, sanitizeName } from './utils.js';
 import { saveToStorage, deleteProject, loadFromStorage, generateExport, loadCurrentProject, getSavedProjects, downloadProjectFile, loadFromFile } from './io.js';
+import { createRoundedRectangle } from './geometry.js';
 
 export function bindUI(canvas) {
     bindToolbar(canvas);
@@ -122,6 +123,20 @@ function bindSettings(canvas) {
         document.getElementById('polygonSidesValue').textContent = polygonSides.value;
     });
 
+    // Rounded Rectangle settings
+    const roundedCornerRadius = document.getElementById('roundedCornerRadius');
+    const roundedCornerSegments = document.getElementById('roundedCornerSegments');
+
+    roundedCornerRadius.addEventListener('input', () => {
+        state.settings.roundedCornerRadius = parseInt(roundedCornerRadius.value) / 100;
+        document.getElementById('roundedCornerRadiusValue').textContent = roundedCornerRadius.value + '%';
+    });
+
+    roundedCornerSegments.addEventListener('input', () => {
+        state.settings.roundedCornerSegments = parseInt(roundedCornerSegments.value);
+        document.getElementById('roundedCornerSegmentsValue').textContent = roundedCornerSegments.value;
+    });
+
     defaultColor.addEventListener('input', () => {
         state.settings.defaultColor = defaultColor.value;
     });
@@ -192,13 +207,13 @@ function bindModals(canvas) {
     document.getElementById('btnSave').addEventListener('click', () => {
         const projectNameInput = document.getElementById('projectName');
         const projectName = projectNameInput.value || 'untitled_project';
-        
+
         // Save to browser storage
         saveToStorage(projectNameInput);
-        
+
         // Also download to device
         downloadProjectFile(projectName);
-        
+
         showToast('Project saved and downloaded!', 'success');
     });
 }
@@ -221,6 +236,7 @@ function bindKeyboard(canvas) {
             'o': 'lineloop',
             't': 'triangle',
             'r': 'rectangle',
+            'u': 'roundedrect',
             'c': 'circle',
             'g': 'polygon',
             'f': 'fan',
@@ -444,6 +460,26 @@ export function updateInspector() {
                 <input type="color" id="shapeColor" value="${shape.color}">
             </div>
         </div>
+        ${shape.type === 'roundedrect' ? `
+        <div class="panel-section">
+            <div class="panel-section-title">Corner Settings</div>
+            <div class="form-group">
+                <label>Corner Radius</label>
+                <div class="slider-container">
+                    <input type="range" id="shapeCornerRadius" min="5" max="50" value="${Math.round((shape.cornerRadius || 0.2) * 100)}">
+                    <span class="slider-value" id="shapeCornerRadiusValue">${Math.round((shape.cornerRadius || 0.2) * 100)}%</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Corner Segments</label>
+                <div class="slider-container">
+                    <input type="range" id="shapeCornerSegments" min="2" max="16" value="${shape.cornerSegments || 8}">
+                    <span class="slider-value" id="shapeCornerSegmentsValue">${shape.cornerSegments || 8}</span>
+                </div>
+            </div>
+            <button class="btn" id="btnRegenerateCorners" style="width: 100%; margin-top: 8px;">🔄 Regenerate Corners</button>
+        </div>
+        ` : ''}
         <div class="panel-section">
             <div class="panel-section-title">Vertices (${shape.vertices.length})</div>
             <div class="vertex-list">
@@ -477,6 +513,44 @@ export function updateInspector() {
         render(canvas, ctx);
         saveToStorage(document.getElementById('projectName'));
     });
+
+    // Rounded rectangle corner controls
+    if (shape.type === 'roundedrect') {
+        const radiusSlider = document.getElementById('shapeCornerRadius');
+        const segmentsSlider = document.getElementById('shapeCornerSegments');
+
+        radiusSlider.addEventListener('input', () => {
+            document.getElementById('shapeCornerRadiusValue').textContent = radiusSlider.value + '%';
+        });
+
+        segmentsSlider.addEventListener('input', () => {
+            document.getElementById('shapeCornerSegmentsValue').textContent = segmentsSlider.value;
+        });
+
+        document.getElementById('btnRegenerateCorners').addEventListener('click', () => {
+            const newRadius = parseInt(radiusSlider.value) / 100;
+            const newSegments = parseInt(segmentsSlider.value);
+
+            // Find the bounding box from current vertices (excluding center)
+            const perimeterVerts = shape.vertices.slice(1);
+            const xs = perimeterVerts.map(v => v.x);
+            const ys = perimeterVerts.map(v => v.y);
+            const p1 = { x: Math.min(...xs), y: Math.min(...ys) };
+            const p2 = { x: Math.max(...xs), y: Math.max(...ys) };
+
+            // Create new rounded rectangle with same bounds
+            const newShape = createRoundedRectangle(p1, p2, newRadius, newSegments, shape.color);
+
+            // Update shape in place
+            shape.vertices = newShape.vertices;
+            shape.cornerRadius = newRadius;
+            shape.cornerSegments = newSegments;
+
+            render(canvas, ctx);
+            updateInspector();
+            saveToStorage(document.getElementById('projectName'));
+        });
+    }
 }
 
 function openExportModal() {
@@ -558,23 +632,23 @@ function openLoadModal(canvas) {
         </div>
         `).join('');
     }
-    
+
     html += `</div>`;
     list.innerHTML = html;
 
     // Bind file upload button
     const btnLoadFromFile = document.getElementById('btnLoadFromFile');
     const fileUploadInput = document.getElementById('fileUploadInput');
-    
+
     if (btnLoadFromFile && fileUploadInput) {
         btnLoadFromFile.addEventListener('click', () => {
             fileUploadInput.click();
         });
-        
+
         fileUploadInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
-            
+
             loadFromFile(file, (result) => {
                 if (result.success) {
                     // Extract project name from filename (remove .drawgl.json or .json extension)

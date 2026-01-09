@@ -5,7 +5,7 @@ A browser-based 2D drawing tool that exports OpenGL-ready C++ header files with 
 Live Demo: [DrawGL](https://faysal-star.github.io/DrawGL/)
 
 <div align="center">
-    <img src="img/base_window.png" alt="Main Window" height="600"/>
+    <img src="img/base_window.png" alt="Main Window"/>
     <p><em>DrawGL Drawing Canvas</em></p>
 </div>
 
@@ -33,6 +33,7 @@ Live Demo: [DrawGL](https://faysal-star.github.io/DrawGL/)
 - `O` - Line Loop
 - `T` - Triangle
 - `R` - Rectangle
+- `U` - Rounded Rectangle
 - `C` - Circle
 - `G` - Polygon
 - `F` - Triangle Fan

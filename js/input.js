@@ -1,7 +1,7 @@
 import { state } from './state.js';
 import { screenToNDC, ndcToScreen, generateId } from './utils.js';
 import { render } from './renderer.js';
-import { hitTest, createRectangle, createCircle, createPolygon } from './geometry.js';
+import { hitTest, createRectangle, createRoundedRectangle, createCircle, createPolygon } from './geometry.js';
 import { saveToStorage } from './io.js';
 import { updateHierarchy, updateInspector } from './ui.js';
 
@@ -56,6 +56,7 @@ function onMouseDown(e, canvas) {
             handleTriangleDown(ndc, canvas, ctx);
             break;
         case 'rectangle':
+        case 'roundedrect':
         case 'circle':
         case 'polygon':
             state.isDrawing = true;
@@ -97,6 +98,12 @@ function onMouseMove(e, canvas) {
         case 'rectangle':
             if (state.isDrawing) {
                 state.tempShape = createRectangle(state.drawingPoints[0], ndc, state.settings.defaultColor);
+                render(canvas, ctx);
+            }
+            break;
+        case 'roundedrect':
+            if (state.isDrawing) {
+                state.tempShape = createRoundedRectangle(state.drawingPoints[0], ndc, state.settings.roundedCornerRadius, state.settings.roundedCornerSegments, state.settings.defaultColor);
                 render(canvas, ctx);
             }
             break;
@@ -173,6 +180,7 @@ function onMouseUp(e, canvas) {
             saveToStorage(document.getElementById('projectName'));
             break;
         case 'rectangle':
+        case 'roundedrect':
         case 'circle':
         case 'polygon':
             if (state.isDrawing && state.tempShape) {
