@@ -2,6 +2,8 @@
 
 A browser-based 2D drawing tool that exports OpenGL-ready C++ header files with vertex data. Draw shapes visually and get plug & play code for your OpenGL projects.
 
+Live Demo: [https://faysal-star.github.io/DrawGL/](https://faysal-star.github.io/DrawGL/)
+
 <div align="center">
     <img src="img/base_window.png" alt="Main Window" height="600"/>
     <p><em>DrawGL Drawing Canvas</em></p>
@@ -57,9 +59,10 @@ A browser-based 2D drawing tool that exports OpenGL-ready C++ header files with 
 
 ### 1. Create Assets
 1. Open `index.html` in a web browser (needs server to avoid CORS issues, use `Live Server` or similar)
-2. Use the toolbar to draw shapes on the canvas
-3. Customize colors and properties in the Inspector panel
-4. Name your project (top center input)
+2. Or use the [Live Demo](https://faysal-star.github.io/DrawGL/)
+3. Use the toolbar to draw shapes on the canvas
+4. Customize colors and properties in the Inspector panel
+5. Name your project (top center input)
 
 ### 2. Export C++ Header
 1. Click the **"Export C++"** button
