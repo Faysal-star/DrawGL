@@ -75,17 +75,17 @@ export function downloadProjectFile(projectName) {
 
 export function loadFromFile(file, callback) {
     const reader = new FileReader();
-    
+
     reader.onload = (e) => {
         try {
             const projectData = JSON.parse(e.target.result);
-            
+
             // Validate the data structure
             if (!projectData.shapes || !Array.isArray(projectData.shapes)) {
                 callback({ success: false, error: 'Invalid file format: missing shapes array' });
                 return;
             }
-            
+
             // Load the data into state
             state.shapes = projectData.shapes || [];
             state.groups = projectData.groups || [];
@@ -96,17 +96,17 @@ export function loadFromFile(file, callback) {
                 }
                 Object.assign(state.settings, projectData.settings);
             }
-            
+
             callback({ success: true });
         } catch (error) {
             callback({ success: false, error: 'Failed to parse file: ' + error.message });
         }
     };
-    
+
     reader.onerror = () => {
         callback({ success: false, error: 'Failed to read file' });
     };
-    
+
     reader.readAsText(file);
 }
 
@@ -130,6 +130,7 @@ export function generateExport(namespace, filename, options) {
 
     // Includes
     code += `#include <glad/glad.h>\n`;
+    code += `#include <vector>\n`;
     code += `#include <unordered_map>\n`;
     code += `#include <string>\n\n`;
 
@@ -169,6 +170,7 @@ export function generateExport(namespace, filename, options) {
         code += `    // --- Shape data structure for runtime management ---\n`;
     }
     code += `    struct ShapeData {\n`;
+    code += `        std::string name;\n`;
     code += `        const float* vertices;\n`;
     code += `        int count;\n`;
     code += `        GLenum primitive;\n`;
@@ -176,30 +178,41 @@ export function generateExport(namespace, filename, options) {
     code += `        unsigned int VBO = 0;\n`;
     code += `    };\n\n`;
 
-    // Shape registry function
+    // Shape registry - using vector for ordered iteration
     if (includeComments) {
-        code += `    // --- Shape registry (lazy-initialized singleton) ---\n`;
+        code += `    // --- Shape registry (ordered vector for correct draw order) ---\n`;
     }
-    code += `    inline std::unordered_map<std::string, ShapeData>& getShapes() {\n`;
-    code += `        static std::unordered_map<std::string, ShapeData> shapes = {\n`;
+    code += `    inline std::vector<ShapeData>& getShapesOrdered() {\n`;
+    code += `        static std::vector<ShapeData> shapes = {\n`;
     state.shapes.forEach((shape, i) => {
         const name = sanitizeName(shape.name);
         const comma = i < state.shapes.length - 1 ? ',' : '';
-        code += `            {"${name}", {${name}_vertices, ${name}_count, ${name}_primitive}}${comma}\n`;
+        code += `            {"${name}", ${name}_vertices, ${name}_count, ${name}_primitive}${comma}\n`;
     });
     code += `        };\n`;
     code += `        return shapes;\n`;
+    code += `    }\n\n`;
+
+    // Name-to-index lookup map
+    if (includeComments) {
+        code += `    // --- Name to index lookup (for drawShape by name) ---\n`;
+    }
+    code += `    inline std::unordered_map<std::string, size_t>& getShapeIndex() {\n`;
+    code += `        static std::unordered_map<std::string, size_t> index = {\n`;
+    state.shapes.forEach((shape, i) => {
+        const name = sanitizeName(shape.name);
+        const comma = i < state.shapes.length - 1 ? ',' : '';
+        code += `            {"${name}", ${i}}${comma}\n`;
+    });
+    code += `        };\n`;
+    code += `        return index;\n`;
     code += `    }\n\n`;
 
     // initShape function
     if (includeComments) {
         code += `    // --- Initialize VAO/VBO for a single shape ---\n`;
     }
-    code += `    inline void initShape(const std::string& name) {\n`;
-    code += `        auto& shapes = getShapes();\n`;
-    code += `        auto it = shapes.find(name);\n`;
-    code += `        if (it == shapes.end()) return;\n`;
-    code += `        ShapeData& s = it->second;\n`;
+    code += `    inline void initShape(ShapeData& s) {\n`;
     code += `        if (s.VAO != 0) return; // Already initialized\n\n`;
     code += `        glGenVertexArrays(1, &s.VAO);\n`;
     code += `        glGenBuffers(1, &s.VBO);\n`;
@@ -220,32 +233,34 @@ export function generateExport(namespace, filename, options) {
         code += `    // --- Initialize all shapes ---\n`;
     }
     code += `    inline void initAllShapes() {\n`;
-    code += `        for (auto& pair : getShapes()) {\n`;
-    code += `            initShape(pair.first);\n`;
+    code += `        for (auto& s : getShapesOrdered()) {\n`;
+    code += `            initShape(s);\n`;
     code += `        }\n`;
     code += `    }\n\n`;
 
-    // drawShape function
+    // drawShape by name function
     if (includeComments) {
         code += `    // --- Draw a single shape by name ---\n`;
     }
     code += `    inline void drawShape(const std::string& name) {\n`;
-    code += `        auto& shapes = getShapes();\n`;
-    code += `        auto it = shapes.find(name);\n`;
-    code += `        if (it == shapes.end()) return;\n`;
-    code += `        ShapeData& s = it->second;\n`;
-    code += `        if (s.VAO == 0) initShape(name);\n`;
+    code += `        auto& index = getShapeIndex();\n`;
+    code += `        auto it = index.find(name);\n`;
+    code += `        if (it == index.end()) return;\n`;
+    code += `        ShapeData& s = getShapesOrdered()[it->second];\n`;
+    code += `        if (s.VAO == 0) initShape(s);\n`;
     code += `        glBindVertexArray(s.VAO);\n`;
     code += `        glDrawArrays(s.primitive, 0, s.count);\n`;
     code += `    }\n\n`;
 
-    // drawAll function
+    // drawAll function - uses ordered vector
     if (includeComments) {
-        code += `    // --- Draw all shapes ---\n`;
+        code += `    // --- Draw all shapes in correct order (first = back, last = front) ---\n`;
     }
     code += `    inline void drawAll() {\n`;
-    code += `        for (auto& pair : getShapes()) {\n`;
-    code += `            drawShape(pair.first);\n`;
+    code += `        for (auto& s : getShapesOrdered()) {\n`;
+    code += `            if (s.VAO == 0) initShape(s);\n`;
+    code += `            glBindVertexArray(s.VAO);\n`;
+    code += `            glDrawArrays(s.primitive, 0, s.count);\n`;
     code += `        }\n`;
     code += `    }\n\n`;
 
@@ -254,8 +269,7 @@ export function generateExport(namespace, filename, options) {
         code += `    // --- Cleanup all GPU resources ---\n`;
     }
     code += `    inline void cleanup() {\n`;
-    code += `        for (auto& pair : getShapes()) {\n`;
-    code += `            ShapeData& s = pair.second;\n`;
+    code += `        for (auto& s : getShapesOrdered()) {\n`;
     code += `            if (s.VAO) {\n`;
     code += `                glDeleteVertexArrays(1, &s.VAO);\n`;
     code += `                s.VAO = 0;\n`;
