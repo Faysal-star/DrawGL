@@ -106,12 +106,17 @@ export function createRoundedRectangle(p1, p2, radiusRatio, segments, color) {
     };
 }
 
-export function createCircle(center, edge, segments, color) {
+export function createCircle(center, edge, segments, color, startAngle = 0, endAngle = 360) {
     const radius = Math.hypot(edge.x - center.x, edge.y - center.y);
     const vertices = [center];
 
+    // Convert degrees to radians
+    const startRad = (startAngle * Math.PI) / 180;
+    const endRad = (endAngle * Math.PI) / 180;
+    const angleRange = endRad - startRad;
+
     for (let i = 0; i <= segments; i++) {
-        const angle = (i / segments) * Math.PI * 2;
+        const angle = startRad + (i / segments) * angleRange;
         vertices.push({
             x: center.x + Math.cos(angle) * radius,
             y: center.y + Math.sin(angle) * radius
@@ -124,8 +129,36 @@ export function createCircle(center, edge, segments, color) {
         type: 'circle',
         primitiveType: 'GL_TRIANGLE_FAN',
         vertices: vertices,
-        color: color
+        color: color,
+        startAngle: startAngle,
+        endAngle: endAngle,
+        segments: segments
     };
+}
+
+export function regenerateCircle(shape, segments, startAngle, endAngle) {
+    // Extract center (first vertex) and calculate radius from existing vertices
+    const center = shape.vertices[0];
+    // Get radius from second vertex (first perimeter point)
+    const firstPerimeterVertex = shape.vertices[1];
+    const radius = Math.hypot(firstPerimeterVertex.x - center.x, firstPerimeterVertex.y - center.y);
+
+    const vertices = [center];
+
+    // Convert degrees to radians
+    const startRad = (startAngle * Math.PI) / 180;
+    const endRad = (endAngle * Math.PI) / 180;
+    const angleRange = endRad - startRad;
+
+    for (let i = 0; i <= segments; i++) {
+        const angle = startRad + (i / segments) * angleRange;
+        vertices.push({
+            x: center.x + Math.cos(angle) * radius,
+            y: center.y + Math.sin(angle) * radius
+        });
+    }
+
+    return vertices;
 }
 
 export function createPolygon(center, edge, sides, color) {

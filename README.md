@@ -34,7 +34,7 @@ Live Demo: [DrawGL](https://faysal-star.github.io/DrawGL/)
 - `T` - Triangle
 - `R` - Rectangle
 - `U` - Rounded Rectangle
-- `C` - Circle
+- `C` - Circle (Arc)
 - `G` - Polygon
 - `F` - Triangle Fan
 - `E` - Vertex Edit

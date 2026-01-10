@@ -2,7 +2,7 @@ import { state } from './state.js';
 import { render } from './renderer.js';
 import { generateId, getShapeIcon, sanitizeName } from './utils.js';
 import { saveToStorage, deleteProject, loadFromStorage, generateExport, loadCurrentProject, getSavedProjects, downloadProjectFile, loadFromFile } from './io.js';
-import { createRoundedRectangle } from './geometry.js';
+import { createRoundedRectangle, regenerateCircle } from './geometry.js';
 
 export function bindUI(canvas) {
     bindToolbar(canvas);
@@ -480,6 +480,33 @@ export function updateInspector() {
             <button class="btn" id="btnRegenerateCorners" style="width: 100%; margin-top: 8px;">🔄 Regenerate Corners</button>
         </div>
         ` : ''}
+        ${shape.type === 'circle' ? `
+        <div class="panel-section">
+            <div class="panel-section-title">Arc Settings</div>
+            <div class="form-group">
+                <label>Start Angle (°)</label>
+                <div class="slider-container">
+                    <input type="range" id="shapeStartAngle" min="0" max="360" value="${shape.startAngle || 0}">
+                    <span class="slider-value" id="shapeStartAngleValue">${shape.startAngle || 0}°</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>End Angle (°)</label>
+                <div class="slider-container">
+                    <input type="range" id="shapeEndAngle" min="0" max="360" value="${shape.endAngle || 360}">
+                    <span class="slider-value" id="shapeEndAngleValue">${shape.endAngle || 360}°</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Segments</label>
+                <div class="slider-container">
+                    <input type="range" id="shapeCircleSegments" min="8" max="128" value="${shape.segments || 32}">
+                    <span class="slider-value" id="shapeCircleSegmentsValue">${shape.segments || 32}</span>
+                </div>
+            </div>
+            <button class="btn" id="btnRegenerateArc" style="width: 100%; margin-top: 8px;">🔄 Regenerate Arc</button>
+        </div>
+        ` : ''}
         <div class="panel-section">
             <div class="panel-section-title">Vertices (${shape.vertices.length})</div>
             <div class="vertex-list">
@@ -545,6 +572,41 @@ export function updateInspector() {
             shape.vertices = newShape.vertices;
             shape.cornerRadius = newRadius;
             shape.cornerSegments = newSegments;
+
+            render(canvas, ctx);
+            updateInspector();
+            saveToStorage(document.getElementById('projectName'));
+        });
+    }
+
+    // Circle arc controls
+    if (shape.type === 'circle') {
+        const startAngleSlider = document.getElementById('shapeStartAngle');
+        const endAngleSlider = document.getElementById('shapeEndAngle');
+        const segmentsSlider = document.getElementById('shapeCircleSegments');
+
+        startAngleSlider.addEventListener('input', () => {
+            document.getElementById('shapeStartAngleValue').textContent = startAngleSlider.value + '°';
+        });
+
+        endAngleSlider.addEventListener('input', () => {
+            document.getElementById('shapeEndAngleValue').textContent = endAngleSlider.value + '°';
+        });
+
+        segmentsSlider.addEventListener('input', () => {
+            document.getElementById('shapeCircleSegmentsValue').textContent = segmentsSlider.value;
+        });
+
+        document.getElementById('btnRegenerateArc').addEventListener('click', () => {
+            const newStartAngle = parseInt(startAngleSlider.value);
+            const newEndAngle = parseInt(endAngleSlider.value);
+            const newSegments = parseInt(segmentsSlider.value);
+
+            // Regenerate vertices using the helper function
+            shape.vertices = regenerateCircle(shape, newSegments, newStartAngle, newEndAngle);
+            shape.startAngle = newStartAngle;
+            shape.endAngle = newEndAngle;
+            shape.segments = newSegments;
 
             render(canvas, ctx);
             updateInspector();
